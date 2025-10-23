@@ -1,0 +1,16 @@
+{
+  "compatibility_date": "2025-10-08",
+  "main": "src/index.ts",
+  "name": "fxr-telemetry",
+  "upload_source_maps": true,
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fxr-metrics-db",
+      "database_id": "a2037dc4-5dc4-456d-9391-a819a094658c"
+    }
+  ]
+}
