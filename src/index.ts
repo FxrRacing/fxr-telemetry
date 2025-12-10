@@ -1,11 +1,53 @@
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { ApiException, fromHono } from "chanfana";
+import { cors } from 'hono/cors'
+import { logger } from 'hono/logger'
 import { Hono } from "hono";
-import { tasksRouter } from "./endpoints/tasks/router";
-import { ContentfulStatusCode } from "hono/utils/http-status";
-import { DummyEndpoint } from "./endpoints/dummyEndpoint";
+import { drizzle, DrizzleD1Database } from 'drizzle-orm/d1';
 
-// Start a Hono app
-const app = new Hono<{ Bindings: Env }>();
+import { CheckoutSession, checkoutSessions } from './db/schema';
+import { listCheckoutSessions } from './db/queries/sessions';
+import authors from './endpoints/author';
+import sessions from './endpoints/sessions/router';
+import { prettyJSON } from 'hono/pretty-json'
+import { openAPIRouteHandler } from 'hono-openapi'
+
+
+import { ContentfulStatusCode } from 'hono/utils/http-status';
+import books from './endpoints/books';
+import { createFactory } from 'hono/factory';
+
+// 1) Define the users table
+const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+});
+
+type Env = {
+  Bindings: {
+    DB: D1Database
+  }
+  Variables: {
+    db: DrizzleD1Database
+  }
+}
+
+const factory = createFactory<Env>({
+  initApp: (app) => {
+    app.use(async (c, next) => {
+      const db = drizzle(c.env.DB)
+      c.set('db', db)
+      await next()
+    })
+  },
+})
+// ...
+
+// Set the `Env` to `createFactory()`
+const app = factory.createApp()
+
+
+
 
 app.onError((err, c) => {
   if (err instanceof ApiException) {
@@ -27,24 +69,65 @@ app.onError((err, c) => {
     500,
   );
 });
+app.use(logger())
+app.use(prettyJSON())
+app.use('/*', cors({
+  origin: '*',
+  allowHeaders: ['X-Custom-Header', 'Upgrade-Insecure-Requests'],
+  allowMethods: ['POST', 'GET', 'OPTIONS'],
+  exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+  maxAge: 600,
+  credentials: true,
+}))
 
-// Setup OpenAPI registry
-const openapi = fromHono(app, {
-  docs_url: "/docs",
-  schema: {
-    info: {
-      title: "My Awesome API",
-      version: "2.0.0",
-      description: "This is the documentation for my awesome API.",
-    },
-  },
-});
 
-// Register Tasks Sub router
-openapi.route("/tasks", tasksRouter);
 
-// Register other endpoints
-openapi.post("/dummy/:slug", DummyEndpoint);
+app.route('/authors', authors)
+app.route('/books', books)
+app.route('/sessions', sessions)
+export default app
+// export default {
+//   async fetch(request: Request, env: Env) {
+//     const db = drizzle(env.DB);
 
-// Export the Hono app
-export default app;
+//     const url = new URL(request.url);
+
+//     // Route to create the users table if it doesn't exist
+//     if (url.pathname === '/setup') {
+//       //
+//       return new Response('Table created or already exists!');
+//     }
+//     if (url.pathname === '/checkout-session') {
+//       if (request.method === 'POST') {
+//         const body = await request.json() as CheckoutSession;
+//         console.log('body', body);
+//         const checkoutSession = await db.insert(checkoutSessions).values(body).returning();
+//         return Response.json(checkoutSession);
+//       }
+//       if (request.method === 'GET') {
+//         const allCheckoutSessions = await listCheckoutSessions(db, 20, 0);
+//         return Response.json(allCheckoutSessions);
+//       }
+//     }
+
+
+//     // Route to add a test user
+//     if (url.pathname === '/add') {
+//       const newUser = await db.insert(users)
+//         .values({ name: 'Test User' })
+//         .returning()
+//         .get();
+
+//       return Response.json(newUser);
+//     }
+
+//     // Route to get all users
+//     if (url.pathname === '/users') {
+//       const allUsers = await db.select().from(users).all();
+//       return Response.json(allUsers);
+//     }
+
+//     // Default route
+//     return new Response('D1 Connected!');
+//   },
+// };

@@ -10,7 +10,8 @@
     {
       "binding": "DB",
       "database_name": "fxr-metrics-db",
-      "database_id": "a2037dc4-5dc4-456d-9391-a819a094658c"
+      "database_id": "4dff9cf3-9f94-4ce9-a1f7-4579f58c5b95",
+      "migrations_dir": "drizzle"
     }
   ]
 }

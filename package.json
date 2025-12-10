@@ -20,21 +20,28 @@
     "cf-typegen": "wrangler types",
     "deploy": "wrangler deploy",
     "dev": "pnpm seedLocalDb && wrangler dev",
+    "local-dev": "pnpm seedLocalDb && wrangler dev --port 8787 && cloudflared tunnel --url http://localhost:8787",
     "predeploy": "wrangler d1 migrations apply DB --remote",
     "seedLocalDb": "wrangler d1 migrations apply DB --local",
     "schema": "npx chanfana",
     "test": "wrangler deploy --dry-run && npx vitest run --config tests/vitest.config.mts"
   },
   "dependencies": {
+    "@hono/standard-validator": "^0.2.0",
     "chanfana": "2.8.1",
     "cloudflare": "^5.2.0",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.0",
     "hono": "4.8.2",
+    "hono-openapi": "^1.1.2",
     "zod": "3.25.67"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.8.44",
     "@types/node": "24.0.4",
+    "drizzle-kit": "^0.31.8",
+    "tsx": "^4.21.0",
     "typescript": "5.8.3",
-    "wrangler": "^4.48.0"
+    "wrangler": "^4.53.0"
   }
 }
